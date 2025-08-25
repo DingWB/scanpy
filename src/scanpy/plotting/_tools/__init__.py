@@ -1441,7 +1441,7 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
     key: str | None = None,
     groupby: str | None = None,
     group: str | Sequence[str] | None = "all",
-    color_map: Colormap | str = "YlOrRd",
+    color_map: Sequence[str] | str = "YlOrRd",
     bg_dotsize: int | None = 80,
     fg_dotsize: int | None = 180,
     vmax: int | None = 1,
@@ -1484,7 +1484,7 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
         want to be plotted use a list (e.g.: ['G1', 'S']. If the overall density
         wants to be ploted set group to 'None'.
     color_map
-        Matplolib color map to use for density plotting.
+        Matplolib color map or a list of colormap to use for density plotting.
     bg_dotsize
         Dot size for background data points not in the `group`.
     fg_dotsize
@@ -1599,12 +1599,6 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
         #  current figure size
         wspace = 0.75 / rcParams["figure.figsize"][0] + 0.02
 
-    # Make the color map
-    if isinstance(color_map, str):
-        color_map = copy(colormaps.get_cmap(color_map))
-
-    color_map.set_over("black")
-    color_map.set_under("lightgray")
     # a name to store the density values is needed. To avoid
     # overwriting a user name a new random name is created
     while True:
@@ -1619,6 +1613,14 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
         if ax is not None:
             msg = "Can only specify `ax` if no `group` sequence is given."
             raise ValueError(msg)
+
+        # Make the color map
+        if isinstance(color_map, str):
+            color_map = copy(colormaps.get_cmap(color_map))
+            color_maps=[color_map] * len(group)
+        else:
+            color_maps=color_map
+
         fig, gs = _panel_grid(hspace, wspace, ncols, len(group))
 
         axs = []
@@ -1630,6 +1632,10 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
                     f"Invalid group name: {group_name}"
                 )
                 raise ValueError(msg)
+
+            color_map=color_maps[count]
+            color_map.set_over("black")
+            color_map.set_under("lightgray")
 
             ax = plt.subplot(gs[count])
             # Define plotting data
@@ -1672,6 +1678,8 @@ def embedding_density(  # noqa: PLR0912, PLR0913, PLR0915
         if title is None:
             title = group if group is not None else ""
 
+        color_map.set_over("black")
+        color_map.set_under("lightgray")
         # Plot the graph
         fig_or_ax = embedding(
             adata,
